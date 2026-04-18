@@ -233,4 +233,4 @@ This project is released under the [MIT License](LICENSE).
 
 # 🙏 Acknowledgements
 
-This work builds upon excellent open-source projects including [Diffusion Policy](https://github.com/real-stanford/diffusion_policy), [3D Diffusion Policy](https://github.com/YanjieZe/3D-Diffusion-Policy), [Improved 3D Diffusion Policy](https://github.com/YanjieZe/Improved-3D-Diffusion-Policy) and and [gello_software](https://github.com/wuphilipp/gello_software). We thank the authors and maintainers for their contributions.
+This work builds upon excellent open-source projects including [Diffusion Policy](https://github.com/real-stanford/diffusion_policy), [3D Diffusion Policy](https://github.com/YanjieZe/3D-Diffusion-Policy), [Improved 3D Diffusion Policy](https://github.com/YanjieZe/Improved-3D-Diffusion-Policy) and [gello_software](https://github.com/wuphilipp/gello_software). We thank the authors and maintainers for their contributions.
