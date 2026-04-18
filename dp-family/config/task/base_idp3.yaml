@@ -1,0 +1,64 @@
+name: base_idp3
+
+task_name: base_idp3
+action_mode: ${oc.env:UR5E_ACTION_MODE,eef}
+agent_pos_key: ${oc.env:UR5E_AGENT_POS_KEY,robot_eef_pose}
+action_key: ${oc.env:UR5E_ACTION_KEY,cartesian_action}
+agent_pos_dim: ${eval:'int("${oc.env:UR5E_AGENT_POS_DIM,7}")'}
+action_dim: ${eval:'int("${oc.env:UR5E_ACTION_DIM,7}")'}
+is_bimanual: ${eval:'"${oc.env:UR5E_IS_BIMANUAL,false}".lower() in ["1", "true", "yes", "on"]'}
+
+shape_meta: &shape_meta
+  obs:
+    point_cloud:
+      shape: [4096, 3]
+      type: point_cloud
+    agent_pos:
+      shape:
+        - ${eval:'int("${oc.env:UR5E_AGENT_POS_DIM,7}")'}
+      type: low_dim
+  action:
+    shape:
+      - ${eval:'int("${oc.env:UR5E_ACTION_DIM,7}")'}
+
+env_runner:
+  _target_: env_runner.robot_runner.RobotRunner
+  max_steps: 0
+  n_obs_steps: ${...n_obs_steps}
+  n_action_steps: ${...n_action_steps}
+  task_name: ${..task_name}
+  render_size: 84
+  use_point_crop: ${...policy.use_point_crop}
+  enable_train_rollout: false
+  frequency: 10
+  action_exec_latency: 0.05
+  robot_ip: 192.168.1.5
+  robot_left_ip: ${oc.env:UR5E_LEFT_ROBOT_IP,${.robot_ip}}
+  robot_right_ip: ${oc.env:UR5E_RIGHT_ROBOT_IP,${.robot_ip}}
+  camera_idx: ${oc.env:UR5E_CAMERA_IDX,0}
+  single_arm_type: ${oc.env:UR5E_SINGLE_ARM,right}
+  is_bimanual: ${..is_bimanual}
+  use_gripper: true
+  dummy_robot: false
+  point_count: 4096
+  point_sampling_method: voxel_uniform
+  voxel_size: 0.005
+  depth_min: 0.05
+  depth_max: 2.0
+  depth_scale: 0.00025
+  speed_slider_value: 1.0
+  interactive_control: true
+  action_mode: ${..action_mode}
+
+dataset:
+  _target_: dataset.robot_dataset.RobotDataset
+  zarr_path: ${oc.env:UR5E_IDP3_ZARR_PATH,data/state_idp3.zarr}
+  point_cloud_key: point_cloud
+  agent_pos_key: ${..agent_pos_key}
+  action_key: ${..action_key}
+  horizon: ${...horizon}
+  pad_before: ${eval:'${...n_obs_steps}-1'}
+  pad_after: ${eval:'${...n_action_steps}-1'}
+  seed: 42
+  val_ratio: 0.02
+  max_train_episodes: null

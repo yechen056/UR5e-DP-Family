@@ -1,0 +1,145 @@
+defaults:
+  - _self_
+  - task: base_idp3
+
+name: idp3
+_target_: workspace.idp3_workspace.iDP3Workspace
+
+task_name: ${task.name}
+shape_meta: ${task.shape_meta}
+exp_name: "debug"
+
+horizon: 16
+n_obs_steps: 2
+n_action_steps: 15
+n_latency_steps: 0
+dataset_obs_steps: ${n_obs_steps}
+keypoint_visible_rate: 1.0
+obs_as_global_cond: True
+
+policy:
+  _target_: policy.diffusion_pointcloud_policy.DiffusionPointcloudPolicy
+  use_point_crop: true
+  condition_type: film
+  use_down_condition: true
+  use_mid_condition: true
+  use_up_condition: true
+
+  diffusion_step_embed_dim: 128
+  down_dims:
+  - 256
+  - 512
+  - 1024
+  horizon: ${horizon}
+  kernel_size: 5
+  n_action_steps: ${n_action_steps}
+  n_groups: 8
+  n_obs_steps: ${n_obs_steps}
+
+  noise_scheduler:
+    _target_: diffusers.schedulers.scheduling_ddim.DDIMScheduler
+    num_train_timesteps: 50
+    beta_start: 0.0001
+    beta_end: 0.02
+    beta_schedule: squaredcos_cap_v2
+    clip_sample: True
+    set_alpha_to_one: True
+    steps_offset: 0
+    prediction_type: sample
+
+  num_inference_steps: 10
+  obs_as_global_cond: true
+  shape_meta: ${shape_meta}
+
+  use_pc_color: false
+  pointnet_type: "multi_stage_pointnet"
+  point_downsample: true
+
+  pointcloud_encoder_cfg:
+    in_channels: 3
+    out_channels: 128
+    use_layernorm: true
+    final_norm: layernorm
+    normal_channel: false
+    num_points: 4096
+
+ema:
+  _target_: model.diffusion.ema_model.EMAModel
+  update_after_step: 0
+  inv_gamma: 1.0
+  power: 0.75
+  min_value: 0.0
+  max_value: 0.9999
+
+dataloader:
+  batch_size: 64
+  num_workers: 12
+  shuffle: True
+  pin_memory: True
+  persistent_workers: False
+
+val_dataloader:
+  batch_size: 64
+  num_workers: 12
+  shuffle: False
+  pin_memory: True
+  persistent_workers: False
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 1.0e-4
+  betas: [0.95, 0.999]
+  eps: 1.0e-8
+  weight_decay: 1.0e-6
+
+training:
+  device: "cuda:0"
+  seed: 42
+  debug: False
+  resume: True
+  lr_scheduler: cosine
+  lr_warmup_steps: 500
+  num_epochs: 3001
+  gradient_accumulate_every: 1
+  use_ema: True
+  rollout_every: 200
+  checkpoint_every: 1000
+  val_every: 1
+  sample_every: 5
+  max_train_steps: null
+  max_val_steps: null
+  tqdm_interval_sec: 1.0
+
+logging:
+  group: ${exp_name}
+  id: null
+  mode: online
+  name: ${training.seed}
+  project: idp3
+  resume: true
+  tags:
+  - idp3
+  - ur5e
+
+checkpoint:
+  save_ckpt: True
+  topk:
+    monitor_key: train_loss
+    mode: min
+    k: 1
+    format_str: 'best-{epoch:04d}.ckpt'
+  save_last_ckpt: True
+  save_last_snapshot: False
+
+multi_run:
+  run_dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+  wandb_name_base: ${now:%Y.%m.%d-%H.%M.%S}_${name}_${task_name}
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+    subdir: ${hydra.job.num}
