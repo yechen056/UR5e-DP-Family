@@ -86,7 +86,7 @@ Keyboard:
 bash scripts/prepare_dp3.sh data/ur5e_raw
 ```
 
-- `Prepare IDP3`
+- `Prepare iDP3`
 
 ```bash
 bash scripts/prepare_idp3.sh data/ur5e_raw
