@@ -27,6 +27,9 @@ With this design, **UR5e-DP-Family** serves as a practical testbed for comparing
 conda create -n dp-family python=3.8
 conda activate dp-family
 
+git clone https://github.com/yechen056/UR5e-DP-Family.git
+cd UR5e-DP-Family
+
 pip install torch==2.1.0 torchvision --index-url https://download.pytorch.org/whl/cu121
 
 pip install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
