@@ -191,7 +191,7 @@ bash scripts/train_policy.sh dp3_official base_dp3 bimanual 0 0 eef
 bash scripts/train_policy.sh idp3 base_idp3 bimanual 0 0 eef
 ```
 
-### 4. 🦾 Evaluation
+## 4. 🦾 Evaluation
 
 ### Single-arm
 
