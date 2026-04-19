@@ -1,13 +1,18 @@
 <div align="center">
   <h1 align="center">UR5e-DP-Family</h1>
-  <img src="docs/tele.gif" alt="UR5e-DP-Family teleoperation demo" width="520" />
-  <br />
-  <img src="docs/baseline.gif" alt="UR5e-DP-Family base demo" width="752" />
 </div>
 
 # 📖 Introduction
 
 **UR5e-DP-Family** is a unified repository for building and deploying the **Diffusion Policy family on UR5e robots**. It provides a practical pipeline that spans **demonstration collection, dataset preparation, policy training, and real-world evaluation**.
+
+## 🖥️ Real-World Demos
+
+<div align="center">
+  <img src="docs/tele.gif" alt="UR5e-DP-Family teleoperation demo" width="520" />
+  <br />
+  <img src="docs/baseline.gif" alt="UR5e-DP-Family base demo" width="752" />
+</div>
 
 The core methods in this repository belong to the **DP family**:
 
@@ -18,6 +23,10 @@ The core methods in this repository belong to the **DP family**:
 - `iDP3`: an enhanced **3D** Diffusion Policy with denser point-cloud representations
 
 With this design, **UR5e-DP-Family** serves as a practical testbed for comparing and deploying **2D and 3D Diffusion Policy variants** on real UR5e platforms, from **single-arm** to **bimanual** manipulation.
+
+## 🔍 Research Context
+
+This repository serves as a practical consolidation of my master's journal research on the `Diffusion Policy` family for UR5e robots. All policies in this repository have been tested on `Ubuntu 20.04`. As I am graduating, this project will no longer receive updates.
 
 # ⚙️ Hardware
 
