@@ -1,8 +1,8 @@
 <div align="center">
   <h1 align="center">UR5e-DP-Family</h1>
-  <img src="docs/baseline.gif" alt="UR5e-DP-Family base demo" width="752" />
-  <br />
   <img src="docs/tele.gif" alt="UR5e-DP-Family teleoperation demo" width="520" />
+  <br />
+  <img src="docs/baseline.gif" alt="UR5e-DP-Family base demo" width="752" />
 </div>
 
 # 📖 Introduction
