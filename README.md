@@ -26,7 +26,7 @@ With this design, **UR5e-DP-Family** serves as a practical testbed for comparing
 
 ## 🔍 Research Context
 
-This repository serves as a practical consolidation of my master's journal research on the `Diffusion Policy` family for UR5e robots. All policies in this repository have been tested on `Ubuntu 20.04`. As I am graduating, this project will no longer receive updates.
+This repository serves as a practical consolidation of my master's research on the `Diffusion Policy` family for UR5e robots. All policies in this repository have been tested on `Ubuntu 20.04`. As I am graduating, this project will no longer receive updates.
 
 # ⚙️ Hardware
 
