@@ -78,25 +78,7 @@ class BaseWorkspace:
         if tag=='latest':
             return pathlib.Path(self.output_dir).joinpath('checkpoints', f'{tag}.ckpt')
         elif tag=='best': 
-            checkpoint_dir = pathlib.Path(self.output_dir).joinpath('checkpoints')
-            all_checkpoints = os.listdir(checkpoint_dir)
-            best_ckpt = None
-            best_score = -1e10
-            for ckpt in all_checkpoints:
-                if 'latest' in ckpt:
-                    continue
-                if 'test_mean_score=' in ckpt:
-                    score = float(re.search(r'test_mean_score=([-+0-9.eE]+)', ckpt).group(1))
-                elif 'train_loss=' in ckpt:
-                    score = -float(re.search(r'train_loss=([-+0-9.eE]+)', ckpt).group(1))
-                else:
-                    continue
-                if score > best_score:
-                    best_ckpt = ckpt
-                    best_score = score
-            if best_ckpt is None:
-                return pathlib.Path(self.output_dir).joinpath('checkpoints', 'latest.ckpt')
-            return pathlib.Path(self.output_dir).joinpath('checkpoints', best_ckpt)
+            return pathlib.Path(self.output_dir).joinpath('checkpoints', 'latest.ckpt')
         else:
             raise NotImplementedError(f"tag {tag} not implemented")
             

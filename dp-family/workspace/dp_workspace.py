@@ -230,6 +230,11 @@ class DPWorkspace(BaseWorkspace):
                     self.epoch = completed_epoch
                     try:
                         self.save_checkpoint()
+                        if completed_epoch % cfg.training.checkpoint_every == 0:
+                            periodic_ckpt_path = pathlib.Path(self.output_dir).joinpath(
+                                "checkpoints", f"{completed_epoch:04d}.ckpt"
+                            )
+                            self.save_checkpoint(path=periodic_ckpt_path)
                         metric_dict = {}
                         for key, value in step_log.items():
                             metric_dict[key.replace("/", "_")] = value

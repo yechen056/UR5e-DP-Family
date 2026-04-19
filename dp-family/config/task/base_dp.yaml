@@ -17,7 +17,7 @@ shape_meta: &shape_meta
     agent_pos:
       shape:
         - ${eval:'int("${oc.env:UR5E_AGENT_POS_DIM,7}")'}
-      type: low_dim
+      type: robot_state
       horizon: 2
   action:
     shape:
@@ -47,7 +47,7 @@ env_runner:
   action_mode: ${..action_mode}
 
 dataset:
-  _target_: dataset.ur5e_multi_image_dataset.UR5EMultiImageDataset
+  _target_: dataset.image_dataset.ImageDataset
   zarr_path: ${oc.env:UR5E_RAW_ZARR_PATH,data/ur5e_raw.zarr}
   camera_keys: [camera_0_color]
   image_size: [224, 224]

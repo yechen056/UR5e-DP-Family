@@ -10,7 +10,7 @@ import copy
 import time
 from model.common.normalizer import LinearNormalizer
 from policy.base_policy import BasePolicy
-from model.diffusion.conditional_unet1d import ConditionalUnet1D
+from model.diffusion.r3m_conditional_unet1d import ConditionalUnet1D
 from model.diffusion.mask_generator import LowdimMaskGenerator
 from common.pytorch_util import dict_apply
 from common.model_util import print_params
@@ -421,4 +421,3 @@ class DiffusionPointcloudPolicy(BasePolicy):
             }
 
         return loss, loss_dict
-

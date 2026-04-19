@@ -8,6 +8,7 @@ import click
 import cv2
 import numpy as np
 import scipy.spatial.transform as st
+from termcolor import cprint
 
 warnings.filterwarnings("ignore", message="ignoring keyword argument 'compressors'")
 
@@ -256,14 +257,22 @@ def main(
                             gui_enabled = False
                             print('OpenCV GUI is unavailable, continuing in no_gui mode.')
 
-                    print('Ready.')
-                    print(f'Control mode: {control_mode}')
-                    print(f'Input device: {input_device}')
-                    print(f'Bimanual mode: {bimanual}')
+                    cprint('Ready.', 'green', attrs=['bold'])
+                    cprint(f'Control mode: {control_mode}', 'green', attrs=['bold'])
+                    cprint(f'Input device: {input_device}', 'green', attrs=['bold'])
+                    cprint(f'Bimanual mode: {bimanual}', 'green', attrs=['bold'])
                     if bimanual:
-                        print('Keyboard: c=start, s=stop, h=home, backspace=drop, q=quit')
+                        cprint(
+                            'Keyboard: c=start, s=stop, h=home, backspace=drop, q=quit',
+                            'green',
+                            attrs=['bold'],
+                        )
                     else:
-                        print('Keyboard: c=start, s=stop, h=home, t=top, backspace=drop, q=quit')
+                        cprint(
+                            'Keyboard: c=start, s=stop, h=home, t=top, backspace=drop, q=quit',
+                            'green',
+                            attrs=['bold'],
+                        )
 
                     t_start = time.monotonic()
                     iter_idx = 0

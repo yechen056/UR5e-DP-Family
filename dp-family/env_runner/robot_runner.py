@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 import torch
+from termcolor import cprint
 
 from common.pytorch_util import dict_apply
 from env_runner.base_runner import BaseRunner
@@ -11,6 +12,48 @@ from real_world.keystroke_counter import KeystrokeCounter, KeyCode
 
 
 HOME_POSE = np.array([-0.11130, -0.48927, 0.22326, 3.152, -0.007, -0.001, 1.0], dtype=np.float32)
+LEFT_HOME_POSE = np.array([0.141773, -0.196927, 0.421262, -1.225401, 1.290381, 1.263347], dtype=np.float32)
+RIGHT_HOME_POSE = np.array([-0.15458, -0.43091, 0.26655, 0.022, 3.124, 0.044], dtype=np.float32)
+
+
+def _append_pose_trajectory(container, start_pose, target_pose, speed=0.03):
+    start_pose = np.asarray(start_pose, dtype=np.float32)
+    target_pose = np.asarray(target_pose, dtype=np.float32)
+
+    if start_pose.shape != target_pose.shape:
+        raise ValueError("Start and target poses must have the same shape.")
+
+    if start_pose.shape[-1] in (12, 14):
+        per_arm_dim = start_pose.shape[-1] // 2
+        left_start, right_start = start_pose[:per_arm_dim], start_pose[per_arm_dim:]
+        left_target, right_target = target_pose[:per_arm_dim], target_pose[per_arm_dim:]
+
+        left_waypoints, left_steps, left_close = interpolate_poses(left_start, left_target, speed)
+        right_waypoints, right_steps, right_close = interpolate_poses(right_start, right_target, speed)
+
+        if left_close and right_close:
+            container.append(np.array(target_pose, dtype=np.float32, copy=True))
+            return
+
+        max_steps = max(left_steps, right_steps)
+        left_waypoints += [np.array(left_target, dtype=np.float32, copy=True)] * (max_steps - len(left_waypoints))
+        right_waypoints += [np.array(right_target, dtype=np.float32, copy=True)] * (max_steps - len(right_waypoints))
+
+        for left_pose, right_pose in zip(left_waypoints, right_waypoints):
+            container.append(
+                np.concatenate(
+                    [
+                        np.asarray(left_pose, dtype=np.float32),
+                        np.asarray(right_pose, dtype=np.float32),
+                    ],
+                    axis=0,
+                )
+            )
+    else:
+        waypoints, _, _ = interpolate_poses(start_pose, target_pose, speed)
+        container.extend(waypoints)
+
+    container.append(np.array(target_pose, dtype=np.float32, copy=True))
 
 
 class RobotRunner(BaseRunner):
@@ -216,7 +259,7 @@ class RobotRunner(BaseRunner):
         expected_dim = current_pose.shape[-1]
         if action_seq.shape[-1] != expected_dim or not np.isfinite(action_seq).all():
             print(
-                f"[RobotRunner] Invalid action sequence; "
+                f"Invalid action sequence; "
                 f"shape={action_seq.shape}, expected_dim={expected_dim}, "
                 f"finite={bool(np.isfinite(action_seq).all())}. Falling back to current pose."
             )
@@ -269,18 +312,18 @@ class RobotRunner(BaseRunner):
     def _handle_key_events(self, env, policy, key_counter, running):
         for key_stroke in key_counter.get_press_events():
             if key_stroke == KeyCode(char='q'):
-                print("[RobotRunner] q pressed, exiting inference.")
+                cprint("q pressed, exiting inference.", "green", attrs=["bold"])
                 return running, True
             if key_stroke == KeyCode(char='c'):
-                print("[RobotRunner] c pressed, starting/resuming inference.")
+                cprint("c pressed, start inference.", "green", attrs=["bold"])
                 key_counter.clear()
                 return True, False
             if key_stroke == KeyCode(char='s'):
-                print("[RobotRunner] s pressed, pausing inference.")
+                cprint("s pressed, pausing inference.", "green", attrs=["bold"])
                 key_counter.clear()
                 return False, False
             if key_stroke == KeyCode(char='h'):
-                print("[RobotRunner] h pressed, moving to HOME_POSE and pausing inference.")
+                cprint("h pressed, moving to HOME_POSE and pausing inference.", "green", attrs=["bold"])
                 key_counter.clear()
                 policy.reset()
                 self._move_home(env)
@@ -290,22 +333,33 @@ class RobotRunner(BaseRunner):
     def _move_home(self, env):
         robot_state = env.get_robot_state()
         current_pose = np.asarray(robot_state['ActualTCPPose'], dtype=np.float32)
-        target_pose = HOME_POSE.copy()
-        if current_pose.shape[-1] == 6:
-            target_pose = target_pose[:6]
-        elif current_pose.shape[-1] == 7 and target_pose.shape[-1] == 6:
-            target_pose = np.concatenate([target_pose, np.array([1.0], dtype=np.float32)])
-        waypoints, _, is_close = interpolate_poses(current_pose, target_pose, speed=0.03)
-        if is_close:
-            print("[RobotRunner] Already near HOME_POSE.")
+        if self.is_bimanual:
+            left_home = LEFT_HOME_POSE.copy()
+            right_home = RIGHT_HOME_POSE.copy()
+            if self.use_gripper:
+                left_home = np.concatenate([left_home, np.array([1.0], dtype=np.float32)])
+                right_home = np.concatenate([right_home, np.array([1.0], dtype=np.float32)])
+            target_pose = np.concatenate([left_home, right_home], axis=0)
+        else:
+            target_pose = HOME_POSE.copy()
+            if current_pose.shape[-1] == 6:
+                target_pose = target_pose[:6]
+            elif current_pose.shape[-1] == 7 and target_pose.shape[-1] == 6:
+                target_pose = np.concatenate([target_pose, np.array([1.0], dtype=np.float32)])
+        waypoints = []
+        _append_pose_trajectory(waypoints, current_pose, target_pose, speed=0.03)
+        if len(waypoints) == 1 and np.allclose(waypoints[0], target_pose):
+            print("Already near HOME_POSE.")
             return
-        waypoints.append(target_pose)
         eef_actions = np.asarray(waypoints, dtype=np.float32)
         timestamps = time.time() + self.action_exec_latency + np.arange(len(eef_actions), dtype=np.float64) / float(self.frequency)
-        joint_dim = 6 + int(self.use_gripper)
+        if self.is_bimanual:
+            joint_dim = 2 * (6 + int(self.use_gripper))
+        else:
+            joint_dim = 6 + int(self.use_gripper)
         joint_actions = np.zeros((len(eef_actions), joint_dim), dtype=np.float32)
         if self.dry_run:
-            print(f"[RobotRunner] dry_run=True, skipping {len(eef_actions)} HOME actions.")
+            print(f"dry_run=True, skipping {len(eef_actions)} HOME actions.")
         else:
             env.exec_actions(
                 joint_actions=joint_actions,
@@ -322,10 +376,10 @@ class RobotRunner(BaseRunner):
         run_until_quit = key_counter is not None and (
             self.max_steps is None or self.max_steps <= 0)
         if key_counter is not None:
-            print("Keyboard: c=start/resume, s=pause, h=home, q=quit")
-            print("[RobotRunner] Waiting for c to start inference.")
+            cprint("Keyboard: c=start, s=pause, h=home, q=quit", "green", attrs=["bold"])
+            cprint("Waiting for c to start inference", "green", attrs=["bold"])
             if run_until_quit:
-                print("[RobotRunner] max_steps<=0, running until q is pressed.")
+                cprint("Running until q is pressed", "green", attrs=["bold"])
 
         while run_until_quit or executed_steps < self.max_steps:
             if key_counter is not None:
@@ -350,7 +404,7 @@ class RobotRunner(BaseRunner):
                     grip_min = float("nan")
                     grip_max = float("nan")
                 print(
-                    f"[RobotRunner] step={executed_steps} action_shape={action_seq.shape} "
+                    f"step={executed_steps} action_shape={action_seq.shape} "
                     f"pos_delta_mean={float(pos_delta.mean()):.4f} pos_delta_max={float(pos_delta.max()):.4f} "
                     f"gripper_min={grip_min:.4f} gripper_max={grip_max:.4f}"
                 )
@@ -369,7 +423,7 @@ class RobotRunner(BaseRunner):
                 joint_dim = 6 + int(self.use_gripper)
                 joint_actions = np.zeros((len(action_seq), joint_dim), dtype=np.float32)
             if self.dry_run:
-                print(f"[RobotRunner] dry_run=True, skipping {len(action_seq)} robot actions.")
+                print(f"dry_run=True, skipping {len(action_seq)} robot actions.")
             else:
                 env.exec_actions(
                     joint_actions=joint_actions,
@@ -381,4 +435,4 @@ class RobotRunner(BaseRunner):
             time.sleep(max(len(action_seq) / float(self.frequency), 1.0 / float(self.frequency)))
 
         if not run_until_quit and executed_steps >= self.max_steps:
-            print(f"[RobotRunner] Reached max_steps={self.max_steps}, inference finished.")
+            print(f"Reached max_steps={self.max_steps}, inference finished.")

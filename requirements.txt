@@ -1,5 +1,7 @@
 absl-py==0.13.0
 av
+click
+dask
 diffusers==0.11.1
 dill==0.3.5.1
 dm_control
@@ -11,6 +13,7 @@ hydra-core==1.2.0
 imageio
 imageio-ffmpeg
 ipdb
+filelock
 jupyterlab==3.0.14
 kaleido
 matplotlib
@@ -27,6 +30,8 @@ psutil
 pygame==2.1.2
 pyparsing==2.4.7
 pyrealsense2==2.54.2.5684
+pyyaml
+robomimic==0.2.0
 pyspacemouse==1.1.5
 pynput==1.8.1
 pymodbus==2.1.0
@@ -46,6 +51,7 @@ ur_rtde==1.6.1
 tensorboard==2.10.1
 tensorboardx==2.5.1
 termcolor
+threadpoolctl
 timm==0.9.7
 torch_geometric
 tqdm==4.67.3

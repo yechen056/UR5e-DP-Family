@@ -73,14 +73,14 @@ ema:
 
 dataloader:
   batch_size: 64
-  num_workers: 12
+  num_workers: 8
   shuffle: True
   pin_memory: True
   persistent_workers: False
 
 val_dataloader:
   batch_size: 64
-  num_workers: 12
+  num_workers: 8
   shuffle: False
   pin_memory: True
   persistent_workers: False
@@ -99,11 +99,11 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 3001
+  num_epochs: 301
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 200
-  checkpoint_every: 1000
+  checkpoint_every: 100
   val_every: 1
   sample_every: 5
   max_train_steps: null
