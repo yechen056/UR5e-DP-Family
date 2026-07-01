@@ -183,6 +183,9 @@ class DiffusionUnetPolicy(BasePolicy):
         action_pred = self.normalizer["action"].unnormalize(nsample[..., : self.action_dim])
         start = self.n_obs_steps - 1
         end = start + self.n_action_steps
+        if end > action_pred.shape[1]:
+            end = action_pred.shape[1]
+            start = max(0, end - self.n_action_steps)
         action = action_pred[:, start:end]
         return {
             "action": action,

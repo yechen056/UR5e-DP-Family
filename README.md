@@ -38,6 +38,9 @@ This repository serves as a practical consolidation of my master's research on t
 # 🛠️ Installation
 
 ```bash
+git clone https://github.com/yechen056/UR5e-DP-Family.git
+cd UR5e-DP-Family
+
 conda create -n dp-family python=3.8
 conda activate dp-family
 

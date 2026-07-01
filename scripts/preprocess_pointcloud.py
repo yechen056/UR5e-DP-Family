@@ -116,7 +116,11 @@ def process_dataset(
         for src_key, dst_key in [
             ('robot_eef_pose', 'robot_eef_pose'),
             ('cartesian_action', 'cartesian_action'),
+            ('robot_joint', 'robot_joint'),
+            ('joint_action', 'joint_action'),
         ]:
+            if src_key not in src_data:
+                continue
             src = src_data[src_key]
             data.create_dataset(
                 dst_key,

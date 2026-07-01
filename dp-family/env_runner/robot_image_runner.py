@@ -336,7 +336,8 @@ class RobotImageRunner(BaseRunner):
                 eef_actions = np.repeat(current_eef[None, :], len(action_seq), axis=0)
             else:
                 eef_actions = action_seq
-                joint_dim = 6 + int(self.use_gripper)
+                per_arm_joint_dim = 6 + int(self.use_gripper)
+                joint_dim = per_arm_joint_dim * (2 if self.is_bimanual else 1)
                 joint_actions = np.zeros((len(action_seq), joint_dim), dtype=np.float32)
             if self.dry_run:
                 print(f"dry_run=True, skipping {len(action_seq)} robot actions.")

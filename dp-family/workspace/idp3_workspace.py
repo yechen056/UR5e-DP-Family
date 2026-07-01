@@ -134,14 +134,16 @@ class iDP3Workspace(BaseWorkspace):
         if cfg.training.use_ema:
             self.ema_model.set_normalizer(normalizer)
 
+        updates_per_epoch = (
+            len(train_dataloader) + cfg.training.gradient_accumulate_every - 1
+        ) // cfg.training.gradient_accumulate_every
+
         # configure lr scheduler
         lr_scheduler = get_scheduler(
             cfg.training.lr_scheduler,
             optimizer=self.optimizer,
             num_warmup_steps=cfg.training.lr_warmup_steps,
-            num_training_steps=(
-                len(train_dataloader) * cfg.training.num_epochs) \
-                    // cfg.training.gradient_accumulate_every,
+            num_training_steps=updates_per_epoch * cfg.training.num_epochs,
             # pytorch assumes stepping LRScheduler every epoch
             # however huggingface diffusers steps it every batch
             last_epoch=self.global_step-1
@@ -219,15 +221,25 @@ class iDP3Workspace(BaseWorkspace):
                     
                     t1_2 = time.time()
 
+                    is_last_batch = (batch_idx == (len(train_dataloader)-1))
+                    is_max_train_step = (
+                        cfg.training.max_train_steps is not None
+                        and batch_idx >= (cfg.training.max_train_steps - 1)
+                    )
+
                     # step optimizer
-                    if self.global_step % cfg.training.gradient_accumulate_every == 0:
+                    if (
+                        ((batch_idx + 1) % cfg.training.gradient_accumulate_every == 0)
+                        or is_last_batch
+                        or is_max_train_step
+                    ):
                         self.optimizer.step()
                         self.optimizer.zero_grad()
                         lr_scheduler.step()
+                        if cfg.training.use_ema:
+                            ema.step(self.model)
                     t1_3 = time.time()
                     # update ema
-                    if cfg.training.use_ema:
-                        ema.step(self.model)
                     t1_4 = time.time()
                     # logging
                     raw_loss_cpu = raw_loss.item()
@@ -256,8 +268,7 @@ class iDP3Workspace(BaseWorkspace):
                         json_logger.log(step_log)
                         self.global_step += 1
 
-                    if (cfg.training.max_train_steps is not None) \
-                        and batch_idx >= (cfg.training.max_train_steps-1):
+                    if is_max_train_step:
                         break
 
                 # at the end of each epoch
@@ -290,7 +301,7 @@ class iDP3Workspace(BaseWorkspace):
                             if (cfg.training.max_train_steps is not None) \
                                 and batch_idx >= (cfg.training.max_train_steps-1):
                                 break
-                        train_loss = np.sum(train_losses)
+                        train_loss = float(np.mean(train_losses))
                         # log epoch average validation loss
                         step_log['train_action_mse_error'] = train_loss
                         step_log['test_mean_score'] = - step_log['train_action_mse_error']
@@ -366,7 +377,8 @@ class iDP3Workspace(BaseWorkspace):
         if cfg.training.use_ema:
             policy = self.ema_model
         policy.eval()
-        policy.cuda()
+        device = torch.device(cfg.training.device)
+        policy.to(device)
 
         runner_log = env_runner.run(policy)
 
@@ -391,7 +403,8 @@ class iDP3Workspace(BaseWorkspace):
         if cfg.training.use_ema:
             policy = self.ema_model
         policy.eval()
-        policy.cuda()
+        device = torch.device(cfg.training.device)
+        policy.to(device)
 
         if hasattr(env_runner, 'run_robot'):
             env_runner.run_robot(policy)
