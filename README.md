@@ -97,6 +97,7 @@ Keyboard:
 - `q`: Quit
 
 ## ▶️ Dataset Replay (Optional)
+Replay collected trajectories to verify data validity before training.
 
 - `Replay single-arm episode`
 
@@ -110,6 +111,36 @@ bash scripts/replay_data.sh data/ur5e_raw 0
 UR5E_BIMANUAL=true \
 bash scripts/replay_data.sh data/ur5e_bimanual_quest_raw 0
 ```
+
+## 🔄 LeRobot Format Conversion (Optional)
+Package collected demonstrations into a LeRobot-compatible dataset for use with our [UR5e-LeRobot](https://github.com/yechen056/UR5e-LeRobot) project.
+
+Use the `UR5e-LeRobot` Python environment for conversion.
+
+```bash
+git clone --recursive https://github.com/yechen056/UR5e-LeRobot.git
+cd UR5e-LeRobot
+
+conda create -y -n ur5e_lerobot python=3.12
+conda activate ur5e_lerobot
+
+pip install -e .
+pip install zarr==2.12.0 numcodecs==0.12.1
+
+cd ../UR5e-DP-Family
+```
+
+```bash
+bash scripts/convert_to_lerobot.sh \
+  --action-mode joint \
+  --output data/lerobot_ur5e_bimanual_joint \
+  --repo-id FANYECHEN/ur5e-bimanual-joint \
+  --overwrite
+```
+
+> 💡 The raw dataset also contains EEF-space state/action data; export it by
+> changing `--action-mode joint` to `--action-mode eef` and updating the output
+> names accordingly.
 
 ## 2. 🗂️ Data Preprocessing
 
